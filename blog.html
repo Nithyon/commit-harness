@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Commit Harness Write-up</title>
+<meta name="description" content="Commit Harness: an interruptible voice agent on Gemini 3.8 Live for Samsung PRISM Theme 05.">
+<meta property="og:title" content="Commit Harness Write-up">
+<meta property="og:description" content="Commit Harness: an interruptible voice agent on Gemini 3.8 Live for Samsung PRISM Theme 05.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap">
+<style>
+/* Layout: one long-form column, about 700px wide, under a short hero. Paper ground, serif headings, one cobalt accent. */
+:root {
+  --bg: #f8f7f3; --card: #f0eee8; --card-2: #e8e5dd; --text: #1c1b18; --text-dim: #57544d; --text-faint: #716d64;
+  --hairline: #e2dfd7; --btn-border: #d3cfc5; --link: #2f4fd0; --soft: #8c9fe8; --red: #cf222e; --green: #1a7f37;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --prose: 700px; --gutter: 24px; --r: 10px; --r-lg: 12px; --pill: 8px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #131312; --card: #1b1b19; --card-2: #232320; --text: #ecebe6; --text-dim: #aaa79f; --text-faint: #86827a;
+  --hairline: #2b2b28; --btn-border: #3b3b37; --link: #93a8ff; --soft: #34479a; --red: #f85149; --green: #3fb950; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #131312; --card: #1b1b19; --card-2: #232320; --text: #ecebe6; --text-dim: #aaa79f; --text-faint: #86827a;
+  --hairline: #2b2b28; --btn-border: #3b3b37; --link: #93a8ff; --soft: #34479a; --red: #f85149; --green: #3fb950; color-scheme: dark }
+
+body { margin: 0; font-family: var(--sans); font-size: 16px; line-height: 1.65; letter-spacing: -0.011em; color: var(--text); background: var(--bg); -webkit-font-smoothing: antialiased; }
+a { color: var(--link); text-underline-offset: 3px; }
+.topnav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--hairline); }
+.topnav-inner { max-width: calc(var(--prose) + 2 * var(--gutter)); margin: 0 auto; padding-inline: var(--gutter); height: 52px; display: flex; align-items: center; gap: 18px; }
+.topnav a { color: var(--text-dim); font-size: 0.8125rem; font-weight: 500; text-decoration: none; }
+.topnav a:hover { color: var(--text); }
+.hero { padding-block: 72px 12px; }
+.hero-inner { max-width: var(--prose); margin: 0 auto; padding-inline: var(--gutter); }
+.label { display: block; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); margin: 0 0 16px; }
+h1 { font-family: var(--sans); font-weight: 600; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.06; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+main { padding-inline: var(--gutter); padding-block: 0 96px; }
+article { max-width: var(--prose); margin: 0 auto; padding-top: 24px; line-height: 1.75; }
+article > p, article > ul, article > ol { color: var(--text-dim); }
+p { margin: 0 0 14px; }
+article h2 { font-family: var(--serif); font-weight: 400; font-size: 1.9rem; line-height: 1.1; letter-spacing: -0.01em; margin: 48px 0 14px; text-wrap: balance; }
+article h3 { font-size: 1.05rem; font-weight: 600; margin: 28px 0 8px; }
+article li { margin-bottom: 6px; }
+article strong { color: var(--text); font-weight: 600; }
+.tldr { background: var(--card); box-shadow: inset 0 0 0 1px var(--hairline); border-radius: var(--r-lg); padding: 18px 20px; margin: 8px 0 28px; font-size: 0.9375rem; }
+.tldr p { color: var(--text-dim); margin: 0 0 12px; }
+.tldr p:last-child { margin: 0; }
+.tldr-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.tldr-links a { display: inline-flex; align-items: center; height: 32px; padding: 0 14px; border-radius: var(--pill); background: var(--bg); box-shadow: inset 0 0 0 1px var(--btn-border); font-size: 0.8125rem; font-weight: 500; color: var(--text); text-decoration: none; }
+.tldr-links a:hover { background: var(--card-2); }
+.divider { text-align: center; color: var(--text-faint); font-family: var(--mono); letter-spacing: 0.4em; margin: 36px 0 0; }
+code { font-family: var(--mono); font-size: 0.85em; background: var(--card); box-shadow: inset 0 0 0 1px var(--hairline); padding: 1px 5px; border-radius: 5px; color: var(--text); overflow-wrap: anywhere; }
+pre { background: var(--card); box-shadow: inset 0 0 0 1px var(--hairline); border-radius: var(--r); padding: 16px 18px; overflow-x: auto; margin: 22px 0; }
+pre code { background: none; box-shadow: none; padding: 0; font-size: 0.8125rem; line-height: 1.65; overflow-wrap: normal; }
+.table-wrap { overflow-x: auto; margin: 22px 0; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 0.875rem; border: 1px solid var(--hairline); border-radius: var(--r); overflow: hidden; font-variant-numeric: tabular-nums; }
+th, td { border-bottom: 1px solid var(--hairline); padding: 9px 14px; text-align: left; vertical-align: top; color: var(--text-dim); }
+tr:last-child td { border-bottom: 0; }
+th { color: var(--text); font-weight: 600; font-size: 0.8125rem; background: var(--card); }
+td.num, th.num { text-align: right; white-space: nowrap; }
+tr.ours td { color: var(--text); font-weight: 600; }
+figure { margin: 28px 0; }
+figure svg { width: 100%; height: auto; display: block; margin: 0 auto; font-family: var(--sans); }
+figcaption { color: var(--text-faint); font-size: 0.8125rem; line-height: 1.6; text-align: center; margin-top: 10px; }
+.note { border-left: 2px solid var(--hairline); padding: 2px 0 2px 18px; color: var(--text-dim); margin: 22px 0; }
+.steps { list-style: none; counter-reset: step; padding: 0; margin: 22px 0; display: grid; gap: 10px; }
+.steps li { counter-increment: step; position: relative; background: var(--card); box-shadow: inset 0 0 0 1px var(--hairline); border-radius: var(--r); padding: 14px 16px 14px 56px; margin: 0; }
+.steps li::before { content: counter(step); position: absolute; left: 16px; top: 14px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-family: var(--mono); font-size: 0.75rem; color: var(--link); box-shadow: inset 0 0 0 1px var(--link); }
+.say { margin: 0 0 4px; color: var(--text); font-weight: 500; }
+.did { margin: 0; color: var(--text-dim); font-size: 0.9375rem; }
+.chip { display: inline-block; margin-left: 6px; padding: 1px 9px; border-radius: 6px; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.02em; white-space: nowrap; vertical-align: 1px; }
+.chip.ok { color: var(--green); box-shadow: inset 0 0 0 1px var(--green); }
+.chip.warn { color: var(--link); box-shadow: inset 0 0 0 1px var(--link); }
+.chip.bad { color: var(--red); box-shadow: inset 0 0 0 1px var(--red); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 22px 0; }
+.stat { background: var(--card); box-shadow: inset 0 0 0 1px var(--hairline); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.stat-num { font-family: var(--serif); font-size: 2.1rem; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
+.stat-lbl { font-size: 0.8125rem; color: var(--text-dim); line-height: 1.4; }
+.pairs { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 18px 0 22px; }
+.pair { background: var(--card); box-shadow: inset 0 0 0 1px var(--hairline); border-radius: var(--r); padding: 12px 14px; min-width: 0; }
+.pair .say { font-size: 0.9375rem; }
+.bad-text { color: var(--red); }
+.compare { background: var(--card); box-shadow: inset 0 0 0 1px var(--hairline); border-radius: var(--r-lg); padding: 16px 18px; margin: 22px 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.8125rem; color: var(--text-dim); margin-bottom: 12px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+.sw.big, .bar b.big { background: var(--link); }
+.sw.small, .bar b.small { background: var(--soft); }
+.row { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); column-gap: 14px; row-gap: 4px; padding: 10px 0; border-top: 1px solid var(--hairline); align-items: center; }
+.row-lbl { grid-row: span 2; font-size: 0.875rem; color: var(--text); line-height: 1.35; }
+.bar { position: relative; height: 18px; background: var(--card-2); border-radius: 4px; }
+.bar b { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+.bar em { position: absolute; right: 6px; top: 0; line-height: 18px; font-style: normal; font-family: var(--mono); font-size: 0.7rem; color: var(--text); }
+.speed { margin: 10px 0 0; font-size: 0.8125rem; color: var(--text-faint); }
+@media (max-width: 520px) { .row { grid-template-columns: 1fr; } .row-lbl { grid-row: auto; } }
+:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+
+<nav class="topnav" aria-label="Page">
+  <div class="topnav-inner">
+    <a href="index.html">&larr; Home</a>
+    <a href="#problem">Problem</a>
+    <a href="#design">Design</a>
+    <a href="#results">Results</a>
+    <a href="#extension">Extension</a>
+    <a href="#try">Try it</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <span class="label">Samsung PRISM · Theme 05 · Team Reign</span>
+    <h1>A Voice Agent That Waits for What You Finally Meant: 67 of 100 on Full&#8209;Duplex&#8209;Bench&nbsp;v3</h1>
+  </div>
+</header>
+
+<main>
+<article>
+  <div class="tldr">
+    <p>TL;DR: People change their mind while they talk. Most voice agents act on the first thing they hear. We put a small layer, the Commit Harness, between the voice model (Gemini 3.8 Live) and its tools. It holds each action until the speaker finishes, replaces it after a correction, cancels it after "never mind", and never runs it twice. On 100 real recordings, our agent passed 67 judged and 55 strict. The same voice model without our changes passed 62 and 50. For the extension, we built an in-car EV assistant that recovers when tools are slow or fail, and an offline Gemma fallback.</p>
+    <p class="tldr-links"><a href="https://github.com/Nithyon/Theme5-Interruptible-Agents">GitHub</a><a href="https://arxiv.org/abs/2604.04847">The benchmark paper</a></p>
+  </div>
+
+  <div class="divider" aria-hidden="true">* * *</div>
+
+  <h2 id="problem">The Problem</h2>
+  <p>A person says: "Book a flight to Boston, no, sorry, New York." A voice agent hears the pause after "Boston" and books that flight. Then it hears the correction and books a second flight. The person now has two bookings, and one of them is wrong.</p>
+  <p>The theme asked for an agent that people can interrupt and correct in real time. Full-Duplex-Bench v3 measures this. It plays 100 recordings of real people who ask for actions out loud, with fillers, pauses, hesitations, false starts and self-corrections. It counts every tool call (an action, such as "track this order") that the agent really runs. One early or extra call fails the recording.</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>Domain</th><th class="num">Recordings</th><th>Example of a tool</th></tr>
+    <tr><td>Shopping</td><td class="num">29</td><td>Track an order, add to cart</td></tr>
+    <tr><td>Finance</td><td class="num">25</td><td>Check a balance, pay a bill</td></tr>
+    <tr><td>Housing</td><td class="num">26</td><td>Search listings, book a viewing</td></tr>
+    <tr><td>Travel</td><td class="num">20</td><td>Search flights, book a seat</td></tr>
+  </table></div>
+  <p>The benchmark gives two scores. The strict score counts only tool calls that are exactly right. The judged score lets a language model accept calls that are right in meaning, for example "BOB 12" for "BOB12". The official judge is GPT-4o. We had no access to it, so we used Gemini 2.5 Pro with the benchmark's own judge prompts. We used no OpenAI model anywhere.</p>
+
+  <h2 id="design">The Design: Propose, Settle, Commit</h2>
+  <p>Gemini 3.8 Live listens and speaks. When it wants to act, it proposes a tool call. Our harness takes the proposal and decides when the call can run.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 230" role="img" aria-labelledby="flow-title">
+      <title id="flow-title">The path of one request: the voice model proposes a call, the Commit Harness holds it until the turn settles, then the tool runs once.</title>
+      <rect x="0" y="0" width="680" height="230" rx="14" style="fill: var(--card);" />
+      <g style="font-size: 13px;">
+        <rect x="20" y="78" width="112" height="64" rx="10" style="fill: var(--bg); stroke: var(--hairline);" />
+        <text x="76" y="105" text-anchor="middle" style="fill: var(--text); font-weight: 600;">Speaker</text>
+        <text x="76" y="124" text-anchor="middle" style="fill: var(--text-faint); font-size: 11px;">"Boston, no, NYC"</text>
+        <rect x="160" y="78" width="124" height="64" rx="10" style="fill: var(--bg); stroke: var(--hairline);" />
+        <text x="222" y="105" text-anchor="middle" style="fill: var(--text); font-weight: 600;">Gemini 3.8 Live</text>
+        <text x="222" y="124" text-anchor="middle" style="fill: var(--text-faint); font-size: 11px;">listens, proposes</text>
+        <rect x="312" y="40" width="222" height="140" rx="12" style="fill: var(--bg); stroke: var(--link); stroke-width: 1.5;" />
+        <text x="423" y="64" text-anchor="middle" style="fill: var(--link); font-weight: 600;">Commit Harness</text>
+        <rect x="326" y="80" width="62" height="40" rx="8" style="fill: var(--card);" />
+        <text x="357" y="105" text-anchor="middle" style="fill: var(--text); font-size: 12px;">Propose</text>
+        <rect x="392" y="80" width="62" height="40" rx="8" style="fill: var(--card);" />
+        <text x="423" y="105" text-anchor="middle" style="fill: var(--text); font-size: 12px;">Settle</text>
+        <rect x="458" y="80" width="62" height="40" rx="8" style="fill: var(--card);" />
+        <text x="489" y="105" text-anchor="middle" style="fill: var(--text); font-size: 12px;">Commit</text>
+        <text x="423" y="146" text-anchor="middle" style="fill: var(--text-faint); font-size: 11px;">hold · replace · cancel · once</text>
+        <text x="423" y="163" text-anchor="middle" style="fill: var(--text-faint); font-size: 11px;">every decision is logged</text>
+        <rect x="562" y="78" width="98" height="64" rx="10" style="fill: var(--bg); stroke: var(--hairline);" />
+        <text x="611" y="105" text-anchor="middle" style="fill: var(--text); font-weight: 600;">12 tools</text>
+        <text x="611" y="124" text-anchor="middle" style="fill: var(--text-faint); font-size: 11px;">runs once</text>
+      </g>
+      <g style="stroke: var(--text-faint); stroke-width: 1.5; fill: none;">
+        <path d="M134 110 H156" /><path d="M150 105 L156 110 L150 115" />
+        <path d="M286 110 H308" /><path d="M302 105 L308 110 L302 115" />
+        <path d="M536 110 H558" /><path d="M552 105 L558 110 L552 115" />
+      </g>
+    </svg>
+    <figcaption>One request from speech to tool. The harness is the only part we added to the voice path.</figcaption>
+  </figure>
+
+  <p>The harness does four things:</p>
+  <ol>
+    <li>Hold: it waits for 0.9 s of quiet, or 1.8 s when the speaker sounds unsure ("um", "so").</li>
+    <li>Replace: after a correction, it drops the held call and keeps the new one.</li>
+    <li>Cancel: after "never mind", it drops the call and tells the model that nothing ran.</li>
+    <li>Once: it never runs the same call twice, but it keeps a second, different request.</li>
+  </ol>
+  <p>Two deciders tell the harness when the speaker has finished. Reflex reads word patterns such as "no, sorry" and costs nothing. Reasoner (TypeSafe Jev, a small classifier) judges the meaning. If Reasoner takes longer than 0.8 s, Reflex decides alone. We also built a third decider, Listener (Smart Turn v3.2), which hears the tone of the voice. It was wrong too often, so it is off in the submitted run.</p>
+  <p>We also added two rules around the harness. The prompt rules tell the model that the last value wins and that it must use values exactly as the speaker said them. The identifier rule joins a spelled-out code such as "B-O-B-1-2" into "BOB12" before the tool runs.</p>
+
+  <h2 id="results">Results</h2>
+  <figure>
+    <svg viewBox="0 0 440 262" role="img" aria-labelledby="res-title">
+      <title id="res-title">Strict and judged pass counts out of 100 for four runs</title>
+      <rect x="0" y="0" width="440" height="262" rx="14" style="fill: var(--card);" />
+      <g style="stroke: var(--hairline); stroke-width: 1;">
+        <line x1="48" y1="212" x2="424" y2="212" /><line x1="48" y1="166.5" x2="424" y2="166.5" />
+        <line x1="48" y1="121" x2="424" y2="121" /><line x1="48" y1="75.5" x2="424" y2="75.5" /><line x1="48" y1="30" x2="424" y2="30" />
+      </g>
+      <g style="fill: var(--text-faint); font-size: 11px;" text-anchor="end">
+        <text x="40" y="216">0</text><text x="40" y="170.5">20</text><text x="40" y="125">40</text><text x="40" y="79.5">60</text><text x="40" y="34">80</text>
+      </g>
+      <g style="font-size: 11px;">
+        <rect x="62" y="98.25" width="30" height="113.75" rx="4" style="fill: var(--soft);" /><text x="77" y="92" text-anchor="middle" style="fill: var(--text-dim);">50</text>
+        <rect x="96" y="70.95" width="30" height="141.05" rx="4" style="fill: var(--link);" /><text x="111" y="65" text-anchor="middle" style="fill: var(--text-dim);">62</text>
+        <rect x="156" y="107.35" width="30" height="104.65" rx="4" style="fill: var(--soft);" /><text x="171" y="101" text-anchor="middle" style="fill: var(--text-dim);">46</text>
+        <rect x="190" y="73.2" width="30" height="138.8" rx="4" style="fill: var(--link);" /><text x="205" y="67" text-anchor="middle" style="fill: var(--text-dim);">61</text>
+        <rect x="250" y="86.9" width="30" height="125.1" rx="4" style="fill: var(--soft);" /><text x="265" y="81" text-anchor="middle" style="fill: var(--text); font-weight: 600;">55</text>
+        <rect x="284" y="59.6" width="30" height="152.4" rx="4" style="fill: var(--link);" /><text x="299" y="54" text-anchor="middle" style="fill: var(--text); font-weight: 600;">67</text>
+        <rect x="344" y="98.25" width="30" height="113.75" rx="4" style="fill: var(--soft);" /><text x="359" y="92" text-anchor="middle" style="fill: var(--text-dim);">50</text>
+        <rect x="378" y="66.4" width="30" height="145.6" rx="4" style="fill: var(--link);" /><text x="393" y="60" text-anchor="middle" style="fill: var(--text-dim);">64</text>
+      </g>
+      <g style="fill: var(--text-faint); font-size: 11px;" text-anchor="middle">
+        <text x="94" y="230">Stock agent</text><text x="188" y="230">29 Sep run</text>
+        <text x="282" y="230" style="fill: var(--text); font-weight: 600;">Submitted</text><text x="376" y="230">Smart Turn on</text>
+      </g>
+      <g style="font-size: 11px;">
+        <rect x="150" y="242" width="10" height="10" rx="2" style="fill: var(--soft);" /><text x="165" y="251" style="fill: var(--text-faint);">Strict</text>
+        <rect x="218" y="242" width="10" height="10" rx="2" style="fill: var(--link);" /><text x="233" y="251" style="fill: var(--text-faint);">Judged</text>
+      </g>
+    </svg>
+    <figcaption>Passed recordings out of 100. One run each. The judge is Gemini 2.5 Pro with the benchmark's prompts, the same for every agent.</figcaption>
+  </figure>
+
+  <div class="table-wrap"><table>
+    <tr><th>Agent</th><th class="num">Judged</th><th class="num">Strict</th><th class="num">Reply delay</th></tr>
+    <tr><td>Stock agent (Gemini 3.8 Live, no changes)</td><td class="num">62</td><td class="num">50</td><td class="num">3.9 s</td></tr>
+    <tr class="ours"><td>Ours, submitted</td><td class="num">67</td><td class="num">55</td><td class="num">5.3 s</td></tr>
+  </table></div>
+
+  <div class="table-wrap"><table>
+    <tr><th>Slice (judged)</th><th class="num">Stock</th><th class="num">Ours</th></tr>
+    <tr><td>Shopping, of 29</td><td class="num">22</td><td class="num">24</td></tr>
+    <tr><td>Finance, of 25</td><td class="num">22</td><td class="num">22</td></tr>
+    <tr><td>Housing, of 26</td><td class="num">5</td><td class="num">7</td></tr>
+    <tr><td>Travel, of 20</td><td class="num">13</td><td class="num">14</td></tr>
+    <tr><td>Two requests in one turn, of 18</td><td class="num">11</td><td class="num">13</td></tr>
+    <tr><td>Three requests in one turn, of 16</td><td class="num">5</td><td class="num">7</td></tr>
+    <tr><td>Self-corrections, of 17</td><td class="num">8</td><td class="num">7</td></tr>
+  </table></div>
+  <p>We ran two configurations on 30 September and submitted the better one. The logs of both runs are in the repository. A teammate also ran our setup script on his own laptop and got 53 strict. That is two recordings below our 55, which is a normal difference between runs.</p>
+
+  <h2>What the Logs Show</h2>
+  <p>The harness logs every decision, so we counted how often it changed what ran. In one full run, Gemini proposed 148 calls. The harness ran 146 of them unchanged, replaced 1 and blocked 1 duplicate. That is 2 of 100 recordings. The reason is simple: Gemini usually waits until it thinks the speaker has finished before it proposes a call. So there is rarely a wrong call left to stop.</p>
+  <p>Our gain over the stock agent therefore comes from the prompt rules and the identifier rule. We switched them on together, so we cannot say which one helped more. The harness has a cost: it waits about 0.9 s before every call. That is the main reason our agent replies in 5.3 s and the stock agent in 3.9 s.</p>
+  <p class="note">Ten failures were changes of mind 1.4 to 10.7 s after the first call had already run. No waiting rule can fix those. They need undo, which the extension below provides.</p>
+
+  <h2 id="extension">The Extension: an In-Car EV Assistant</h2>
+  <p>The benchmark's tools answer at once and never fail. Real tools are slow and sometimes fail. So we built a recovery layer, a second layer that sits in front of the tools and handles failures. We tested it on an in-car assistant for an electric car, with mock tools (tools that give made-up answers).</p>
+
+  <figure>
+    <svg viewBox="0 0 680 250" role="img" aria-labelledby="rec-title">
+      <title id="rec-title">The recovery layer sits between the voice model and the car tools and has five jobs.</title>
+      <rect x="0" y="0" width="680" height="250" rx="14" style="fill: var(--card);" />
+      <g style="font-size: 13px;">
+        <rect x="20" y="93" width="120" height="64" rx="10" style="fill: var(--bg); stroke: var(--hairline);" />
+        <text x="80" y="120" text-anchor="middle" style="fill: var(--text); font-weight: 600;">Gemini 3.8 Live</text>
+        <text x="80" y="139" text-anchor="middle" style="fill: var(--text-faint); font-size: 11px;">asks for an action</text>
+        <rect x="168" y="22" width="344" height="206" rx="12" style="fill: var(--bg); stroke: var(--link); stroke-width: 1.5;" />
+        <text x="340" y="46" text-anchor="middle" style="fill: var(--link); font-weight: 600;">Recovery layer</text>
+        <g style="font-size: 12px;">
+          <rect x="184" y="60" width="312" height="28" rx="7" style="fill: var(--card);" /><text x="198" y="78" style="fill: var(--text);"><tspan style="font-weight: 600;">Time limit</tspan><tspan style="fill: var(--text-faint);">  stops an attempt that hangs</tspan></text>
+          <rect x="184" y="92" width="312" height="28" rx="7" style="fill: var(--card);" /><text x="198" y="110" style="fill: var(--text);"><tspan style="font-weight: 600;">Retry</tspan><tspan style="fill: var(--text-faint);">  tries a failed call again, quietly</tspan></text>
+          <rect x="184" y="124" width="312" height="28" rx="7" style="fill: var(--card);" /><text x="198" y="142" style="fill: var(--text);"><tspan style="font-weight: 600;">No repeat</tspan><tspan style="fill: var(--text-faint);">  never books the same thing twice</tspan></text>
+          <rect x="184" y="156" width="312" height="28" rx="7" style="fill: var(--card);" /><text x="198" y="174" style="fill: var(--text);"><tspan style="font-weight: 600;">Undo</tspan><tspan style="fill: var(--text-faint);">  cancels the old booking, then books</tspan></text>
+          <rect x="184" y="188" width="312" height="28" rx="7" style="fill: var(--card);" /><text x="198" y="206" style="fill: var(--text);"><tspan style="font-weight: 600;">Hand-off</tspan><tspan style="fill: var(--text-faint);">  passes to a human after 2 failures</tspan></text>
+        </g>
+        <rect x="540" y="93" width="120" height="64" rx="10" style="fill: var(--bg); stroke: var(--hairline);" />
+        <text x="600" y="120" text-anchor="middle" style="fill: var(--text); font-weight: 600;">Car tools</text>
+        <text x="600" y="139" text-anchor="middle" style="fill: var(--text-faint); font-size: 11px;">slow, can fail</text>
+      </g>
+      <g style="stroke: var(--text-faint); stroke-width: 1.5; fill: none;">
+        <path d="M142 125 H164" /><path d="M158 120 L164 125 L158 130" />
+        <path d="M514 125 H536" /><path d="M530 120 L536 125 L530 130" />
+      </g>
+    </svg>
+    <figcaption>The five jobs of the recovery layer. The voice model never talks to a tool directly.</figcaption>
+  </figure>
+
+  <h3>One drive, five requests</h3>
+  <p>We played a recorded conversation to the assistant through LiveKit, the same way the benchmark plays its recordings. These are the five requests and what the recovery log shows.</p>
+  <ol class="steps">
+    <li>
+      <p class="say">"Reroute to the mall, no, sorry, the airport."</p>
+      <p class="did">One reroute ran, to the airport. <span class="chip ok">1 call</span></p>
+    </li>
+    <li>
+      <p class="say">"Find a charging station near downtown."</p>
+      <p class="did">The search failed twice and worked on the third try. The driver heard only the answer. <span class="chip warn">2 quiet retries</span></p>
+    </li>
+    <li>
+      <p class="say">"Book that station for 6 pm." Then: "Book it again."</p>
+      <p class="did">One booking. The repeat did not run. <span class="chip ok">repeat blocked</span></p>
+    </li>
+    <li>
+      <p class="say">"Actually, make it 7 pm instead."</p>
+      <p class="did">The 6 pm booking was cancelled first, then 7 pm was booked. <span class="chip ok">undo, then book</span></p>
+    </li>
+    <li>
+      <p class="say">"Call roadside assistance." Twice, and the line is down.</p>
+      <p class="did">After two failed requests, a human took over, with a reference number. <span class="chip bad">hand-off</span></p>
+    </li>
+  </ol>
+
+  <h3>On real speech</h3>
+  <p>The drive above uses a synthetic voice. To test real voices, we took 11 recordings from SLURP, a public dataset of real people's requests to a home assistant (Bastianelli et al., EMNLP 2020). We picked them by a fixed rule, not by ear. We made the lights tool fail on its first try every time.</p>
+  <div class="stats">
+    <div class="stat"><span class="stat-num">10 / 11</span><span class="stat-lbl">requests carried out</span></div>
+    <div class="stat"><span class="stat-num">8 / 8</span><span class="stat-lbl">failures recovered by a retry</span></div>
+    <div class="stat"><span class="stat-num">1</span><span class="stat-lbl">bug found and fixed (the repeat rule)</span></div>
+  </div>
+  <p>The one miss was "light colour for study room". The agent has no colour tool, and it said so.</p>
+
+  <h3>When the speaker pauses mid-sentence</h3>
+  <p>Next, we put a silence of 1.6 to 3.1 s inside each of the same 11 requests, for example "turn off the ... porch light". The result got much worse.</p>
+
+  <figure>
+    <svg viewBox="0 0 440 262" role="img" aria-labelledby="pause-title">
+      <title id="pause-title">The home assistant on 11 real requests, without and with a pause inside each request</title>
+      <rect x="0" y="0" width="440" height="262" rx="14" style="fill: var(--card);" />
+      <g style="stroke: var(--hairline); stroke-width: 1;">
+        <line x1="48" y1="212" x2="424" y2="212" /><line x1="48" y1="129.3" x2="424" y2="129.3" /><line x1="48" y1="46.5" x2="424" y2="46.5" />
+      </g>
+      <g style="fill: var(--text-faint); font-size: 11px;" text-anchor="end">
+        <text x="40" y="216">0</text><text x="40" y="133.3">5</text><text x="40" y="50.5">10</text>
+      </g>
+      <g style="font-size: 11px;">
+        <rect x="88" y="46.5" width="44" height="165.5" rx="4" style="fill: var(--link);" /><text x="110" y="40" text-anchor="middle" style="fill: var(--text-dim);">10</text>
+        <rect x="152" y="210" width="44" height="2" rx="1" style="fill: var(--red);" /><text x="174" y="204" text-anchor="middle" style="fill: var(--text-dim);">0</text>
+        <rect x="276" y="129.3" width="44" height="82.7" rx="4" style="fill: var(--link);" /><text x="298" y="123" text-anchor="middle" style="fill: var(--text-dim);">5</text>
+        <rect x="340" y="112.7" width="44" height="99.3" rx="4" style="fill: var(--red);" /><text x="362" y="106" text-anchor="middle" style="fill: var(--text-dim);">6</text>
+      </g>
+      <g style="fill: var(--text-faint); font-size: 11px;" text-anchor="middle">
+        <text x="142" y="230">Without pauses</text><text x="330" y="230">With pauses</text>
+      </g>
+      <g style="font-size: 11px;">
+        <rect x="120" y="242" width="10" height="10" rx="2" style="fill: var(--link);" /><text x="135" y="251" style="fill: var(--text-faint);">Fully right</text>
+        <rect x="220" y="242" width="10" height="10" rx="2" style="fill: var(--red);" /><text x="235" y="251" style="fill: var(--text-faint);">Wrong or extra action</text>
+      </g>
+    </svg>
+    <figcaption>Requests out of 11, same recordings, one run each.</figcaption>
+  </figure>
+
+  <div class="pairs">
+    <div class="pair"><p class="say">"Turn the lights off."</p><p class="did bad-text">Turned the lights on.</p></div>
+    <div class="pair"><p class="say">"Light colour for study room."</p><p class="did bad-text">Set the study AC to 22.</p></div>
+    <div class="pair"><p class="say">"Turn my lights down."</p><p class="did bad-text">Dimmed them, then rang the phone.</p></div>
+  </div>
+  <p>This agent has the recovery layer but not the Commit Harness. The pauses broke it. This is why the two layers must work together in one agent. That is our next step.</p>
+
+  <h3>An offline fallback with Gemma</h3>
+  <p>If the car loses its connection, a local model must take over. Our teammate Aryan tested two Gemma 4 models with Ollama on a laptop with 32 GB of memory and no graphics card. Each request was a written sentence, the text that the model gets after speech-to-text.</p>
+
+  <div class="compare" role="table" aria-label="Gemma 4 26B against Gemma 4 e4b">
+    <div class="legend"><span><i class="sw big"></i>Gemma 4 26B, 15.9 GB</span><span><i class="sw small"></i>Gemma 4 e4b, 3.1 GB</span></div>
+    <div class="row" role="row"><span class="row-lbl">Our 40 requests, right</span>
+      <div class="bar"><b class="big" style="width: 94.4%"></b><em>34/36</em></div><div class="bar"><b class="small" style="width: 94.4%"></b><em>34/36</em></div></div>
+    <div class="row" role="row"><span class="row-lbl">Real SLURP light requests, right</span>
+      <div class="bar"><b class="big" style="width: 88.2%"></b><em>45/51</em></div><div class="bar"><b class="small" style="width: 35.3%"></b><em>18/51</em></div></div>
+    <div class="row" role="row"><span class="row-lbl">No fitting tool, did nothing</span>
+      <div class="bar"><b class="big" style="width: 100%"></b><em>60/60</em></div><div class="bar"><b class="small" style="width: 100%"></b><em>60/60</em></div></div>
+    <div class="row" role="row"><span class="row-lbl">Self-corrections, right</span>
+      <div class="bar"><b class="big" style="width: 96.6%"></b><em>28/29</em></div><div class="bar"><b class="small" style="width: 100%"></b><em>29/29</em></div></div>
+    <div class="row" role="row"><span class="row-lbl">"Never mind", did nothing</span>
+      <div class="bar"><b class="big" style="width: 100%"></b><em>8/8</em></div><div class="bar"><b class="small" style="width: 75%"></b><em>6/8</em></div></div>
+    <p class="speed">Time per request: about 6 s for 26B, about 2 s for e4b.</p>
+  </div>
+  <p>The small model was faster, but it refused most real requests and carried out two cancelled actions. After "leave them as they are", it still turned the lights off. So we chose the large model. On our own 40 requests the two models tied. Only the real requests and the cancellations told them apart.</p>
+
+  <h2>Where It Still Fails</h2>
+  <ol>
+    <li>Late changes of mind: when the person corrects themselves after the call ran, only undo can help. Undo exists only in the extension.</li>
+    <li>Pauses inside a request: without the harness, the extension agent took a wrong action in 6 of 11 requests.</li>
+    <li>Speed: the harness adds about 0.9 s before each call.</li>
+    <li>The judge: our judged scores come from Gemini 2.5 Pro, not GPT-4o. A GPT-4o score can differ by a few recordings.</li>
+  </ol>
+
+  <h2 id="try">Try It</h2>
+  <p>You need Linux or WSL, a LiveKit Cloud project and a Gemini API key. The script asks for the keys on the first run and saves them. A full run of 100 recordings takes about 2 hours.</p>
+<pre><code>git clone https://github.com/Nithyon/Theme5-Interruptible-Agents
+cd Theme5-Interruptible-Agents
+./reproduce.sh                          # the benchmark agent, 100 recordings
+./reproduce_extension.sh                # offline tests of the recovery layer
+./reproduce_extension.sh fallback       # the Gemma fallback suite, needs Ollama</code></pre>
+  <p>Every run that we report has its logs in <code>project-log/runs/</code>, down to each recording.</p>
+
+  <h2>Credits</h2>
+  <p>Team Reign: Saini, Lohit and Aryan. The benchmark is Full-Duplex-Bench v3 (<a href="https://arxiv.org/abs/2604.04847">arXiv 2604.04847</a>). The real-speech tests use SLURP (Bastianelli et al., EMNLP 2020). AI coding assistants, mostly Claude Code, wrote most of the code and documents. The team made the decisions and is responsible for every claim. The full AI disclosure is in the repository.</p>
+</article>
+</main>
+
+</body>
+</html>
