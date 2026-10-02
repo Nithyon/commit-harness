@@ -68,9 +68,15 @@ a { color: var(--accent); text-underline-offset: 3px; }
 .intro h1 { font-family: var(--display); font-weight: 800; font-size: clamp(40px, 7vw, 72px); line-height: .98; letter-spacing: -0.035em; margin: 10px 0 12px; }
 .intro .sub { font-size: clamp(18px, 2.4vw, 22px); color: var(--dim); margin: 0 0 32px; max-width: 34ch; }
 .grad-text { background: linear-gradient(90deg, var(--g1), var(--g2), var(--g3)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px 24px; padding: 22px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.meta dt { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin-bottom: 4px; }
-.meta dd { margin: 0; font-size: 15px; line-height: 1.5; }
+.meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px 24px; padding: 24px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.meta dt { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+.meta dd { margin: 0; font-size: 15px; line-height: 1.45; }
+.meta-team { grid-column: 1 / -1; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.members { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.members li { background: var(--soft); border-radius: 12px; padding: 10px 12px; box-shadow: 0 0 0 1px var(--line) inset; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mname { font-weight: 600; font-size: 15px; color: var(--text); }
+.mrole { font-size: 12.5px; color: var(--faint); }
+@media (max-width: 720px) { .meta { grid-template-columns: repeat(2, minmax(0, 1fr)); } .members { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .lead-pair { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 8px 24px; margin: 28px 0 0; }
 .lead-pair dt { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding-top: 4px; }
 .lead-pair dd { margin: 0 0 18px; color: var(--dim); }
@@ -208,11 +214,19 @@ pre code { background: none; padding: 0; font-size: 13px; line-height: 1.7; over
     <h1>Commit <span class="grad-text">Harness</span></h1>
     <p class="sub">A voice agent that acts only on what you finally meant.</p>
     <dl class="meta">
-      <div><dt>Team</dt><dd>Team Reign: Pokala Sai Nithin, Aryan Garg, Lohitashwa and V Preetha</dd></div>
+      <div class="meta-team">
+        <dt>Team Reign</dt>
+        <dd><ul class="members">
+          <li><span class="mname">Pokala Sai Nithin</span><span class="mrole">Team lead</span></li>
+          <li><span class="mname">Aryan Garg</span><span class="mrole">Offline fallback</span></li>
+          <li><span class="mname">Lohitashwa</span><span class="mrole">Reproduction, harness rules</span></li>
+          <li><span class="mname">V Preetha</span><span class="mrole">Member</span></li>
+        </ul></dd>
+      </div>
       <div><dt>College</dt><dd>SRM Institute of Science and Technology</dd></div>
       <div><dt>Voice model</dt><dd>Gemini 3.8 Live</dd></div>
-      <div><dt>Benchmark</dt><dd>Full-Duplex-Bench v3, 100 real recordings</dd></div>
-      <div><dt>Timeline</dt><dd>29 to 30 September 2026</dd></div>
+      <div><dt>Benchmark</dt><dd>Full-Duplex-Bench v3<br><span class="mrole">100 real recordings</span></dd></div>
+      <div><dt>Timeline</dt><dd>29 to 30 Sep 2026</dd></div>
     </dl>
     <dl class="lead-pair">
       <dt>Description</dt>
