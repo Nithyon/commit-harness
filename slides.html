@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Commit Harness Slides</title>
+<meta name="description" content="The presentation slides of Team Reign for Samsung PRISM Theme 05.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one slide at a time, as large as the screen allows, with controls under it and a strip of thumbnails. */
+:root {
+  --bg: #ffffff; --soft: #f7f7f9; --soft-2: #eef0f4; --line: #e9e9eb; --text: #111215; --dim: #5b5f66; --faint: #8a8e96;
+  --accent: #4f5bd5; --g1: #4285f4; --g2: #9b72cb; --g3: #d96570;
+  --display: "Inter Tight", "Helvetica Neue", Arial, sans-serif; --sans: "Inter", -apple-system, "Segoe UI", Arial, sans-serif; --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0e0f12; --soft: #17181c; --soft-2: #1f2126; --line: #2a2c31; --text: #f2f3f5; --dim: #a7abb3; --faint: #7d818a; --accent: #8f99ff; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0e0f12; --soft: #17181c; --soft-2: #1f2126; --line: #2a2c31; --text: #f2f3f5; --dim: #a7abb3; --faint: #7d818a; --accent: #8f99ff; color-scheme: dark }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); }
+.pill-nav { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); z-index: 5; margin: 12px auto 0; width: max-content; max-width: calc(100vw - 24px); display: flex; gap: 2px; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 80%, transparent); backdrop-filter: blur(18px); box-shadow: 0 0 0 1px var(--line), 0 8px 24px -12px rgba(0,0,0,.25); overflow-x: auto; }
+.pill-nav a { padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--dim); text-decoration: none; white-space: nowrap; }
+.pill-nav a:hover, .pill-nav a[aria-current] { color: var(--text); background: var(--soft); }
+main { max-width: 1180px; margin: 0 auto; padding: 28px 20px 60px; }
+.head { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; justify-content: space-between; margin-bottom: 18px; }
+.kicker { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 4.5vw, 44px); letter-spacing: -0.03em; line-height: 1.05; margin: 6px 0 0; }
+.grad { background: linear-gradient(90deg, var(--g1), var(--g2), var(--g3)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { font: inherit; font-size: 13.5px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 10px; border: 0; cursor: pointer; text-decoration: none; background: var(--soft); color: var(--text); box-shadow: 0 0 0 1px var(--line) inset; }
+.btn.primary { background: var(--text); color: var(--bg); box-shadow: none; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.viewer { position: relative; border-radius: 18px; overflow: hidden; background: var(--soft); box-shadow: 0 0 0 1px var(--line) inset, 0 30px 60px -40px rgba(40,40,90,.45); }
+.frame { aspect-ratio: 16 / 9; width: 100%; display: grid; place-items: center; background: #fff; }
+.frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.viewer:fullscreen { background: #000; display: grid; place-items: center; }
+.viewer:fullscreen .frame { width: min(100vw, 177.78vh); background: #000; }
+.nav-zone { position: absolute; top: 0; bottom: 0; width: 22%; border: 0; background: transparent; cursor: pointer; }
+.nav-zone.prev { left: 0; } .nav-zone.next { right: 0; }
+.nav-zone:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0 0; }
+.count { font-family: var(--mono); font-size: 13px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.progress { flex: 1; height: 4px; border-radius: 2px; background: var(--soft-2); overflow: hidden; }
+.progress b { display: block; height: 100%; background: linear-gradient(90deg, var(--g1), var(--g2), var(--g3)); transition: width .25s ease; }
+.thumbs { display: flex; gap: 8px; overflow-x: auto; padding: 14px 2px 6px; scrollbar-width: thin; }
+.thumbs button { flex: 0 0 auto; width: 132px; aspect-ratio: 16 / 9; padding: 0; border: 0; border-radius: 8px; overflow: hidden; cursor: pointer; background: var(--soft); box-shadow: 0 0 0 1px var(--line) inset; opacity: .65; transition: opacity .2s ease; }
+.thumbs button img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumbs button[aria-current="true"] { opacity: 1; box-shadow: 0 0 0 2px var(--accent); }
+.thumbs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.note { font-size: 13px; color: var(--faint); margin-top: 14px; }
+@media (max-width: 560px) { .thumbs button { width: 104px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<nav class="pill-nav" aria-label="Site">
+  <a href="index.html">Home</a><a href="blog.html">Write-up</a><a href="slides.html" aria-current="page">Slides</a>
+</nav>
+<main>
+  <div class="head">
+    <div>
+      <span class="kicker">Team Reign · Samsung PRISM · Theme 05</span>
+      <h1>The <span class="grad">slides</span></h1>
+    </div>
+    <div class="actions">
+      <button class="btn" type="button" id="fs">Full screen</button>
+      <a class="btn primary" href="slides/team-reign-slides.pdf" download>Download PDF</a>
+    </div>
+  </div>
+
+  <div class="viewer" id="viewer">
+    <div class="frame"><img id="slide" src="slides/slide-01.jpg" alt="Slide 1 of 14"></div>
+    <button class="nav-zone prev" type="button" id="prev" aria-label="Previous slide"></button>
+    <button class="nav-zone next" type="button" id="next" aria-label="Next slide"></button>
+  </div>
+  <div class="bar">
+    <span class="count" id="count">1 / 14</span>
+    <div class="progress"><b id="prog" style="width: 7.1%"></b></div>
+    <span class="count">← → keys, or swipe</span>
+  </div>
+  <div class="thumbs" id="thumbs" role="group" aria-label="All slides"></div>
+  <p class="note">The email addresses on the first slide are hidden on this public copy.</p>
+</main>
+<script>
+(function () {
+  var N = 14, i = 0;
+  var img = document.getElementById("slide"), count = document.getElementById("count"), prog = document.getElementById("prog");
+  var thumbs = document.getElementById("thumbs"), viewer = document.getElementById("viewer");
+  function src(k) { return "slides/slide-" + String(k + 1).padStart(2, "0") + ".jpg"; }
+  for (var k = 0; k < N; k++) {
+    var b = document.createElement("button");
+    b.type = "button"; b.setAttribute("aria-label", "Slide " + (k + 1)); b.dataset.k = k;
+    b.innerHTML = '<img loading="lazy" alt="" src="' + src(k) + '">';
+    b.addEventListener("click", function () { go(+this.dataset.k); });
+    thumbs.appendChild(b);
+  }
+  function go(k) {
+    i = Math.max(0, Math.min(N - 1, k));
+    img.src = src(i); img.alt = "Slide " + (i + 1) + " of " + N;
+    count.textContent = (i + 1) + " / " + N; prog.style.width = ((i + 1) / N * 100) + "%";
+    thumbs.querySelectorAll("button").forEach(function (b, j) { b.setAttribute("aria-current", j === i ? "true" : "false"); });
+    var t = thumbs.children[i]; if (t && t.scrollIntoView) t.scrollIntoView({ block: "nearest", inline: "center" });
+    [i - 1, i + 1].forEach(function (j) { if (j >= 0 && j < N) { var p = new Image(); p.src = src(j); } });
+    try { history.replaceState(null, "", "#" + (i + 1)); } catch (e) {}
+  }
+  document.getElementById("prev").addEventListener("click", function () { go(i - 1); });
+  document.getElementById("next").addEventListener("click", function () { go(i + 1); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); go(i + 1); }
+    if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(i - 1); }
+    if (e.key === "Home") go(0); if (e.key === "End") go(N - 1);
+  });
+  var x0 = null;
+  viewer.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  viewer.addEventListener("touchend", function (e) { if (x0 === null) return; var dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) go(i + (dx < 0 ? 1 : -1)); x0 = null; });
+  document.getElementById("fs").addEventListener("click", function () {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (viewer.requestFullscreen) viewer.requestFullscreen().catch(function () {});
+  });
+  var h = parseInt((location.hash || "").slice(1), 10);
+  go(h >= 1 && h <= N ? h - 1 : 0);
+})();
+</script>
+</body>
+</html>
