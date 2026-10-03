@@ -142,6 +142,17 @@ b.ours-j { background: linear-gradient(90deg, var(--g1), var(--g2) 60%, var(--g3
 .tile .t { font-size: 13px; color: var(--dim); margin-top: 6px; line-height: 1.4; }
 .tile.ok .n { color: var(--ok); } .tile.bad .n { color: var(--bad); } .tile.hold .n { color: var(--hold); }
 
+/* competitor table */
+.cmp-wrap { overflow-x: auto; margin: 18px 0 14px; border-radius: 16px; box-shadow: 0 0 0 1px var(--line) inset; }
+.cmp { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13.5px; line-height: 1.4; }
+.cmp th, .cmp td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+.cmp thead th { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); font-weight: 500; }
+.cmp tbody th { font-weight: 600; color: var(--text); width: 26%; }
+.cmp tr:last-child th, .cmp tr:last-child td { border-bottom: 0; }
+.cmp td.y { color: var(--ok); } .cmp td.n { color: var(--bad); } .cmp td.u { color: var(--faint); }
+.cmp .us { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.cmp thead th.us { color: var(--accent); }
+
 /* car dashboard */
 .dash { border-radius: 20px; overflow: hidden; background: #0f1220; color: #e8eaf2; box-shadow: 0 24px 48px -28px rgba(15,18,32,.7); }
 .dash-top { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; font-family: var(--mono); font-size: 11px; color: #9aa0b8; border-bottom: 1px solid #22263a; }
@@ -182,7 +193,7 @@ pre code { background: none; padding: 0; font-size: 13px; line-height: 1.7; over
 
 
 <nav class="pill-nav" aria-label="Sections">
-  <a href="#idea">Idea</a><a href="#harness">Harness</a><a href="#results">Results</a><a href="#car">In-car</a><a href="#fallback">Offline</a><a href="#try">Try it</a><a href="blog.html">Write-up</a><a href="slides.html">Slides</a>
+  <a href="#idea">Idea</a><a href="#harness">Harness</a><a href="#results">Results</a><a href="#compare">Compare</a><a href="#car">In-car</a><a href="#fallback">Offline</a><a href="#try">Try it</a><a href="blog.html">Write-up</a><a href="slides.html">Slides</a>
 </nav>
 
 <div class="story" id="top">
@@ -308,6 +319,42 @@ pre code { background: none; padding: 0; font-size: 13px; line-height: 1.7; over
       </div>
     </div>
     <p>Gemini usually waits until it thinks you have finished, so the harness rarely needs to step in. Our gain came from the prompt rules and the identifier rule, which we switched on together. Ten failures were changes of mind after the call had already run. No waiting rule can fix those. They need undo, which the extension below provides.</p>
+  </section>
+
+  <section class="s wrap" id="compare">
+    <h2>How we compare</h2>
+    <p>Three labs now publish voice agents built the way ours is: a fast model talks and listens, and a slower model or layer does the tool work. The chart shows the published Full-Duplex-Bench v3 tool-call scores. Each lab ran its own setup and its own judge, so read the bars as a range, not as one leaderboard.</p>
+    <div class="panel">
+      <div class="legend"><span><i class="sw" style="background: color-mix(in srgb, var(--faint) 35%, var(--soft-2))"></i>Reported by the lab</span><span><i class="sw" style="background: linear-gradient(90deg, var(--g1), var(--g2) 60%, var(--g3))"></i>Ours, judged</span><span><i class="sw" style="background: color-mix(in srgb, var(--accent) 45%, var(--soft-2))"></i>Ours, strict</span></div>
+      <div class="hbars">
+        <div class="hrow"><span class="name">GPT-Live-1 with a GPT backend</span><div class="track"><div><b style="width:87%; background: color-mix(in srgb, var(--faint) 35%, var(--soft-2))"></b><em>87.0</em></div></div></div>
+        <div class="hrow"><span class="name">Thinking Machines interaction model</span><div class="track"><div><b style="width:68%; background: color-mix(in srgb, var(--faint) 35%, var(--soft-2))"></b><em>68.0</em></div></div></div>
+        <div class="hrow"><span class="name"><strong>Our agent on Gemini 3.8 Live</strong></span><div class="track"><div><b class="ours-j" style="width:67%"></b><em>67</em></div><div><b class="strict" style="width:55%"></b><em>55</em></div></div></div>
+        <div class="hrow"><span class="name">Gemini 3.8 Live alone</span><div class="track"><div><b class="judged" style="width:62%"></b><em>62</em></div><div><b class="strict" style="width:50%"></b><em>50</em></div></div></div>
+        <div class="hrow"><span class="name">GPT-Realtime-2.1</span><div class="track"><div><b style="width:60%; background: color-mix(in srgb, var(--faint) 35%, var(--soft-2))"></b><em>60.0</em></div></div></div>
+        <div class="hrow"><span class="name">GPT-Realtime-2</span><div class="track"><div><b style="width:58%; background: color-mix(in srgb, var(--faint) 35%, var(--soft-2))"></b><em>58.0</em></div></div></div>
+      </div>
+      <p class="panel-cap">Full-Duplex-Bench v3, tool-call pass rate out of 100. GPT rows: OpenAI's GPT-Live-1 API launch post (backend "Terra, low"). Thinking Machines: <a href="https://thinkingmachines.ai/blog/interaction-models/">Interaction models</a>, 11 May 2026, research preview. Our rows: one run each, judge Gemini 2.5 Pro in place of GPT-4o.</p>
+    </div>
+
+    <h3>What each system tells you</h3>
+    <p>The scores show who calls the right tool. They do not show what happens when a slow tool is still running and the user changes their mind. That is the part we built, so the table below lists only what each team has published about it.</p>
+    <div class="cmp-wrap">
+      <table class="cmp">
+        <thead><tr><th scope="col"></th><th scope="col">GPT-Live-1</th><th scope="col">Thinking Machines</th><th scope="col">Kyutai Moshi (RL)</th><th scope="col" class="us">Our agent</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Fast talker, slow thinker</th><td class="y">Yes, delegates to a backend model</td><td class="y">Yes, a background model</td><td class="n">No, one model</td><td class="y us">Yes, Gemini Live plus our planner</td></tr>
+          <tr><th scope="row">Calls tools</th><td class="y">Yes</td><td class="y">Yes</td><td class="n">No</td><td class="y us">Yes</td></tr>
+          <tr><th scope="row">Waits until the user finishes</th><td class="u">Not published</td><td class="u">Not published</td><td class="u">Talking only</td><td class="y us">Yes, holds each call until the turn settles</td></tr>
+          <tr><th scope="row">Drops a stale result after a correction</th><td class="u">Not published</td><td class="u">Times when to speak a result</td><td class="n">No tools</td><td class="y us">Yes, by plan version</td></tr>
+          <tr><th scope="row">Undoes an action that already ran</th><td class="u">Not published</td><td class="u">Not published</td><td class="n">No tools</td><td class="y us">Yes, newest step first</td></tr>
+          <tr><th scope="row">Hands off after repeated failures</th><td class="u">Not published</td><td class="u">Not published</td><td class="n">No tools</td><td class="y us">Yes, after two failures</td></tr>
+          <tr><th scope="row">Works on any voice model</th><td class="n">OpenAI only</td><td class="n">Own model</td><td class="y">Open weights</td><td class="y us">Yes, a layer outside the model</td></tr>
+          <tr><th scope="row">Available</th><td class="y">Paid API</td><td class="u">Research preview</td><td class="y">Free, 8B weights</td><td class="y us">Open source</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="fine">"Not published" means that we found no public description, not that the feature is missing. Kyutai's models target Full-Duplex-Bench v1 and v2 (talking manners) and do not call tools. ByteDance SeedRealtime is left out: it is available only in the Doubao app and publishes no benchmark.</p>
   </section>
 
   <section class="s wrap" id="car">

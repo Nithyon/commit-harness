@@ -69,13 +69,13 @@ h1 { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 4.5vw
   </div>
 
   <div class="viewer" id="viewer">
-    <div class="frame"><img id="slide" src="slides/slide-01.jpg" alt="Slide 1 of 14"></div>
+    <div class="frame"><img id="slide" src="slides/slide-01.jpg" alt="Slide 1 of 15"></div>
     <button class="nav-zone prev" type="button" id="prev" aria-label="Previous slide"></button>
     <button class="nav-zone next" type="button" id="next" aria-label="Next slide"></button>
   </div>
   <div class="bar">
-    <span class="count" id="count">1 / 14</span>
-    <div class="progress"><b id="prog" style="width: 7.1%"></b></div>
+    <span class="count" id="count">1 / 15</span>
+    <div class="progress"><b id="prog" style="width: 6.7%"></b></div>
     <span class="count">← → keys, or swipe</span>
   </div>
   <div class="thumbs" id="thumbs" role="group" aria-label="All slides"></div>
@@ -83,7 +83,7 @@ h1 { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 4.5vw
 </main>
 <script>
 (function () {
-  var N = 14, i = 0;
+  var N = 15, i = 0;
   var img = document.getElementById("slide"), count = document.getElementById("count"), prog = document.getElementById("prog");
   var thumbs = document.getElementById("thumbs"), viewer = document.getElementById("viewer");
   function src(k) { return "slides/slide-" + String(k + 1).padStart(2, "0") + ".jpg"; }
