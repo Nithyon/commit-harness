@@ -193,7 +193,7 @@ pre code { background: none; padding: 0; font-size: 13px; line-height: 1.7; over
 
 
 <nav class="pill-nav" aria-label="Sections">
-  <a href="#idea">Idea</a><a href="#harness">Harness</a><a href="#results">Results</a><a href="#compare">Compare</a><a href="#car">In-car</a><a href="#fallback">Offline</a><a href="#try">Try it</a><a href="blog.html">Write-up</a><a href="slides.html">Slides</a>
+  <a href="#idea">Idea</a><a href="#harness">Harness</a><a href="#results">Results</a><a href="#compare">Compare</a><a href="#why">Why this way</a><a href="#car">In-car</a><a href="#fallback">Offline</a><a href="#try">Try it</a><a href="blog.html">Write-up</a><a href="slides.html">Slides</a>
 </nav>
 
 <div class="story" id="top">
@@ -343,7 +343,7 @@ pre code { background: none; padding: 0; font-size: 13px; line-height: 1.7; over
       <table class="cmp">
         <thead><tr><th scope="col"></th><th scope="col">GPT-Live-1</th><th scope="col">Thinking Machines</th><th scope="col">Kyutai Moshi (RL)</th><th scope="col" class="us">Our agent</th></tr></thead>
         <tbody>
-          <tr><th scope="row">Fast talker, slow thinker</th><td class="y">Yes, delegates to a backend model</td><td class="y">Yes, a background model</td><td class="n">No, one model</td><td class="y us">Yes, Gemini Live plus our planner</td></tr>
+          <tr><th scope="row">Fast talker, slow thinker</th><td class="y">Yes, delegates to a backend model</td><td class="y">Yes, a background model</td><td class="n">No, one model</td><td class="y us">Yes, Gemini Live plus our Thinker</td></tr>
           <tr><th scope="row">Calls tools</th><td class="y">Yes</td><td class="y">Yes</td><td class="n">No</td><td class="y us">Yes</td></tr>
           <tr><th scope="row">Waits until the user finishes</th><td class="u">Not published</td><td class="u">Not published</td><td class="u">Talking only</td><td class="y us">Yes, holds each call until the turn settles</td></tr>
           <tr><th scope="row">Drops a stale result after a correction</th><td class="u">Not published</td><td class="u">Times when to speak a result</td><td class="n">No tools</td><td class="y us">Yes, by plan version</td></tr>
@@ -355,6 +355,33 @@ pre code { background: none; padding: 0; font-size: 13px; line-height: 1.7; over
       </table>
     </div>
     <p class="fine">"Not published" means that we found no public description, not that the feature is missing. Kyutai's models target Full-Duplex-Bench v1 and v2 (talking manners) and do not call tools. ByteDance SeedRealtime is left out: it is available only in the Doubao app and publishes no benchmark.</p>
+  </section>
+
+  <section class="s wrap" id="why">
+    <h2>What we ran into, and why we built it this way</h2>
+    <p>We started with a simple idea and met six limits. Each limit shaped one choice in the design. This section lists them in order.</p>
+
+    <h3>1. The best voice models are closed</h3>
+    <p>We cannot change the inside of Gemini Live. Thinking Machines released its interaction model in May 2026 as a research preview with closed weights, and it has no public API. ByteDance SeedRealtime runs only inside the Doubao app and has no developer API. NVIDIA PersonaPlex-7B is open, but its authors list tool calling as a future step, so it talks and does not act. Because we could not retrain any of these models, we put the safety work in a layer outside the model. That layer works with any voice model that sends tool calls, and this is the reason we call it a harness.</p>
+
+    <h3>2. The benchmark tools never fail</h3>
+    <p>The benchmark tools answer at once and are always right. Real tools are slow, fail, and run twice. So we added a recovery layer with mock tools. It tries a failed call again, blocks a repeated booking, drops a result that comes back late, and undoes finished steps, newest first. We did not have a real scheduling system, so every claim about these tools is about mock tools.</p>
+
+    <h3>3. Speech is messy</h3>
+    <p>People pause inside a sentence and then change their mind. A model that acts on the first words books the wrong thing. This is the reason for the core rule: hold each call until the turn settles, then act once. On real SLURP recordings with a pause added, an agent without the harness went from 10 right out of 11 to 5 right, and 6 of 11 did a wrong or extra action.</p>
+
+    <h3>4. Money needs a clear yes</h3>
+    <p>In the care demo, a payment must never go through on a loose "okay". The tool now refuses to charge the card until the customer says yes to the exact fee that the agent just asked about. A review found a hole: an "okay" to a later question, such as a text reminder, could count as consent. We closed it. Any other question from the agent now cancels the open fee question, and the agent must ask again. One live check is still open. We must confirm that the real agent's spoken question reaches this check.</p>
+
+    <h3>5. We needed a fast talker and a slow thinker</h3>
+    <p>The two best published systems use two models. A fast model keeps the conversation going. A slower model does the multi-step work. We built the same shape on Gemini. Gemini Live talks, and an optional second model, the Thinker, plans the tool work. The Thinker is off by default, because the live care demo works with Gemini Live's own tool calls, and we have not run the Thinker live.</p>
+
+    <h3>6. The cloud can disappear, and we had no GPU</h3>
+    <p>A car or a home agent must work with no connection. We tested two Gemma 4 models on a laptop with 32 GB of memory and no graphics card. The large one was right on 45 of 51 real light requests, and the small one on only 18. We chose the large one, at about 6 seconds a reply.</p>
+
+    <h3>Why this approach, and where it falls short</h3>
+    <p>We chose a layer outside the model for three reasons. It works on models we cannot open. It is easy to test, because the tests use a fake clock and mock tools and need no keys. And it gives a proof at the end: a check of the final state shows one booking, one charge, and no hold left over. It also has limits. Thinking Machines scores higher on the benchmark, with 68.0 against our 67 judged and 55 strict. Their model also acts on its own, for example on timers and video cues, and ours speaks only after the customer speaks or a tool answers. Our scores come from one run each with a different judge, so read them as a range. We built our layer for tool safety. We did not build a new model.</p>
+    <p class="fine">Facts about other systems come from public write-ups and may change. We did not check them with the labs.</p>
   </section>
 
   <section class="s wrap" id="car">
